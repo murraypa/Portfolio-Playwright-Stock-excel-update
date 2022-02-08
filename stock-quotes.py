@@ -1,4 +1,4 @@
-import selenium
+from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import openpyxl
 from openpyxl import Workbook
@@ -17,6 +17,13 @@ ticker = sheet['A2'].value
 print(f"row1={ticker}\n")
 number_rows = ws.max_row
 print(f"max rows in sheet:{number_rows}")
+
+#control web browser with web driver
+#driver = webdriver.Chrome(".\chromedriver.exe")
+#driver = webdriver.chrome()
+driver = webdriver.Firefox(".\geckodriver.exe")
+driver = webdriver.Firefox
+driver.get("https://finance.yahoo.com/")
 
 #loop through all rows, skipping title row 1
 for symbol in range(2,number_rows+1):
