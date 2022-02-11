@@ -1,7 +1,10 @@
+from multiprocessing.connection import wait
+from time import sleep
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.firefox.service import Service
+
 import openpyxl
 from openpyxl import Workbook
 
@@ -24,13 +27,21 @@ print(f"max rows in sheet:{number_rows}")
 #driver = webdriver.Chrome(".\chromedriver.exe")
 #driver = webdriver.chrome()
 
-driver = Service(r'C:\\Users\\user\\Downloads\\python\\Selenium\\selenium-tests\\geckodriver.exe')
+driver = webdriver.Firefox(executable_path=r'C:\\Users\user\\Downloads\\python\\Selenium\\selenium-tests\\geckodriver.exe')
+driver.get("https://www.nasdaq.com/market-activity/quotes/real-time")
+#driver = Service(r'C:\\Users\\user\\Downloads\\python\\Selenium\\selenium-tests\\geckodriver.exe')
 #driver = webdriver.Firefox(executable_path=r'C:\Users\user\Downloads\python\Selenium\selenium-tests\geckodriver.exe')
-driver.get("https://finance.yahoo.com/")
-quotelookup = driver.find_element(By.CSS_SELECTOR,'#darla_csc_holder').send_keys(ticker)
-quotelookup = driver.find_element(By.CSS_SELECTOR,'#darla_csc_holder').send_keys(Keys.ENTER)
-#quotelookup = driver.find_element_by_css_selector('#darla_csc_holder').send_keys(ticker) #  #input.D\(ib\)
-#quotelookup = driver.find_element_by_css_selector('#darla_csc_holder').send_keys(Keys.ENTER)  ##darla_csc_holder #input.D\(ib\)
+print("sleeping 10")
+sleep(10)
+quotelookup = driver.find_element(By.CSS_SELECTOR,'#find-symbol-input-dark').send_keys(ticker)
+quotelookup = driver.find_element(By.CSS_SELECTOR,'#find-symbol-input-dark').send_keys(Keys.RETURN)
+print("sleeping 10")
+sleep(10)
+NLSvolume = driver.find_element(By.CSS_SELECTOR,'.real-time-trades-info__cell--value')
+print(f"NLS volume={NLSvolume}")
+# quotelookup = driver.find_element(By.XPATH,'//*[@id="yfin-usr-qry"]').send_keys(ticker)
+# quotelookup = driver.find_element(By.XPATH,'//*[@id="yfin-usr-qry"]').send_keys(Keys.RETURN)
+# quotelookup = driver.find_element(By.XPATH,'//*[@id="yfin-usr-qry"]').send_keys(Keys.RETURN)
 
 
 #loop through all rows, skipping title row 1
@@ -38,6 +49,6 @@ for symbol in range(2,number_rows+1):
     ticker = sheet['A'+ str(symbol)].value
     print(f"ticker={ticker}")
     #put current ticker into "quote lookup" box
-    quotelookup = driver.find_element_by_css_selector('input.D\(ib\)').send_keys(ticker)
-    quotelookup = driver.find_element_by_css_selector('input.D\(ib\)').send_keys(Keys.ENTER)
+    # quotelookup = driver.find_element(By.CSS_SELECTOR,'input.D\(ib\)').send_keys(ticker)
+    # quotelookup = driver.find_element(By.CSS_SELECTOR,'input.D\(ib\)').send_keys(Keys.ENTER)
 
