@@ -1,1 +1,1 @@
-# selenium-tests
+# This python code uses Playwright to open a spreadsheet with data rows, loops through the rows and enters stock symbols into a free quote web site. It then captures the updated stock values from the web site and saves them back to the spreadsheet.
