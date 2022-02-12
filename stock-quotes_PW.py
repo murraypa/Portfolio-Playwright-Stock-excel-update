@@ -1,69 +1,58 @@
-from multiprocessing.connection import wait
-from time import sleep
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.service import Service
 import openpyxl
 from openpyxl import Workbook
 from playwright.sync_api import sync_playwright
 from playwright.async_api import async_playwright, TimeoutError
 
+def main():
+    with sync_playwright() as p:
+        #open browser and load URL outside of loop
+        browser = p.chromium.launch(headless=False)
+        #browser = p.firefox.launch(headless=False)
+        page = browser.new_page()
+        #open browser to stock quote page
+        page.goto("https://quotes.freerealtime.com/quotes/")
 
-with sync_playwright() as p:
-    #browser = p.chromium.launch(headless=False)
-    browser = p.firefox.launch(headless=False)
-    page = browser.new_page()
-    page.goto("https://www.nasdaq.com/market-activity/quotes/real-time")
-    print(f"title={page.title()}")
-    page.wait_for_selector("#find-symbol-input-dark", 60000)
-    page.click("#find-symbol-input-dark")
-    page.keyboard.insert_text('BABA')
-    #page.keyboard.insert_text('Enter')
-    page.keyboard.press('Enter')
-    browser.close()
+        #open excel workbook
+        print('open xl file')
+        wb = openpyxl.load_workbook('./Book.xlsx')
+        #get worksheet names
+        print(f"worksheet names: {wb.sheetnames}")
+        #select worksheet with data
+        sheet = wb["ticker symbols"]
+        #set this worksheet to be active
+        ws = wb.active
+        #print number of data rows found, minus 1 for header
+        number_rows = ws.max_row
+        print(f"Data rows found:{number_rows-1}")
 
-print('open xl file')
-#open excel workbook
-wb = openpyxl.load_workbook('./Book.xlsx')
-#get worksheet names
-print(f"worksheet names: {wb.sheetnames}")
-#get single worksheet
-sheet = wb["ticker symbols"]
-print(f"sheet={sheet}")
-#set active worksheet
-ws = wb.active
-ticker = sheet['A2'].value
-print(f"row1={ticker}\n")
-number_rows = ws.max_row
-print(f"max rows in sheet:{number_rows}")
+        #loop through spreadsheet data rows
+        for row in range(2,number_rows+1):
+            #get ticker from spreadsheet cell
+            ticker = sheet['A'+ str(row)].value
+            #click the field to enter ticker
+            page.click("#edit-symbol")
+            #type in the ticker name
+            page.keyboard.insert_text(ticker)
+            #press ENTER to search
+            page.keyboard.press('Enter')
+            #get last, change, percent values using xpath to locate
+            last = page.text_content('//*[@id="qmQuoteTable"]/div[2]/div/div/div/div[1]/div/div[2]/div/div/div[1]/div[1]/span[1]')
+            change = page.text_content('//*[@id="qmQuoteTable"]/div[2]/div/div/div/div[1]/div/div[2]/div/div/div[1]/div[1]/span[2]/span[2]')
+            percent = page.text_content('//*[@id="qmQuoteTable"]/div[2]/div/div/div/div[1]/div/div[2]/div/div/div[1]/div[1]/span[2]/span[4]')
+            print(f"ticker={ticker}\t last={last}\t change={change}\t percent={percent}")
+            #input("press enter to continue")
 
-# #control web browser with web driver
-# #driver = webdriver.Chrome(".\chromedriver.exe")
-# #driver = webdriver.chrome()
+            #update 3 cells in this row of the spreadsheet
+            ws.cell(row,2,last)
+            ws.cell(row,3,change)
+            ws.cell(row,4,percent)
 
-# driver = webdriver.Firefox(executable_path=r'C:\\Users\user\\Downloads\\python\\Selenium\\selenium-tests\\geckodriver.exe')
-# driver.get("https://www.nasdaq.com/market-activity/quotes/real-time")
-# #driver = Service(r'C:\\Users\\user\\Downloads\\python\\Selenium\\selenium-tests\\geckodriver.exe')
-# #driver = webdriver.Firefox(executable_path=r'C:\Users\user\Downloads\python\Selenium\selenium-tests\geckodriver.exe')
-# print("sleeping 10")
-# sleep(10)
-# quotelookup = driver.find_element(By.CSS_SELECTOR,'#find-symbol-input-dark').send_keys(ticker)
-# quotelookup = driver.find_element(By.CSS_SELECTOR,'#find-symbol-input-dark').send_keys(Keys.RETURN)
-# print("sleeping 10")
-# sleep(10)
-# NLSvolume = driver.find_element(By.CSS_SELECTOR,'.real-time-trades-info__cell--value')
-# print(f"NLS volume={NLSvolume}")
-# # quotelookup = driver.find_element(By.XPATH,'//*[@id="yfin-usr-qry"]').send_keys(ticker)
-# # quotelookup = driver.find_element(By.XPATH,'//*[@id="yfin-usr-qry"]').send_keys(Keys.RETURN)
-# # quotelookup = driver.find_element(By.XPATH,'//*[@id="yfin-usr-qry"]').send_keys(Keys.RETURN)
+        #save spreadsheet
+        wb.save('./Book.xlsx')
+        #close the browser window
+        browser.close()
 
 
-# #loop through all rows, skipping title row 1
-# for symbol in range(2,number_rows+1):
-#     ticker = sheet['A'+ str(symbol)].value
-#     print(f"ticker={ticker}")
-#     #put current ticker into "quote lookup" box
-#     # quotelookup = driver.find_element(By.CSS_SELECTOR,'input.D\(ib\)').send_keys(ticker)
-#     # quotelookup = driver.find_element(By.CSS_SELECTOR,'input.D\(ib\)').send_keys(Keys.ENTER)
 
+if __name__ == '__main__':
+    main()
